@@ -193,9 +193,10 @@ try
         promise.Resolve();
     }
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Unexpected error while making directory.");
+    // "Unexpected error while making directory."
+    promise.Reject( winrt::to_string(ex.message()).c_str() );
 }
 
 
@@ -216,9 +217,10 @@ try
 
     promise.Resolve();
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to move file.");
+    // "Failed to move file."
+    promise.Reject(winrt::to_string(ex.message()).c_str());
 }
 
 
@@ -239,9 +241,10 @@ try
 
     promise.Resolve();
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to copy file.");
+    // "Failed to copy file."
+    promise.Reject(winrt::to_string(ex.message()).c_str());
 }
 
 
@@ -257,9 +260,10 @@ try
 
     promise.Resolve(result);
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to retrieve file system info.");
+    // "Failed to retrieve file system info."
+    promise.Reject(winrt::to_string(ex.message()).c_str());
 }
 
 
@@ -284,7 +288,8 @@ catch (const hresult_error& ex)
     }
     else
     {
-        promise.Reject("Failed to unlink file.");
+        // "Failed to unlink file" 
+        promise.Reject( winrt::to_string(ex.message()).c_str() );
     }
 }
 
@@ -295,9 +300,10 @@ try
     std::filesystem::path path(filepath);
     promise.Resolve(std::filesystem::exists(path));
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to check if file or directory exists.");
+    // "Failed to check if file or directory exists.
+    promise.Reject(winrt::to_string(ex.message()).c_str());
 }
 
 
@@ -339,7 +345,8 @@ catch (const hresult_error& ex)
     }
     else
     {
-        promise.Reject("Failed to read file.");
+        // "Failed to read file."
+        promise.Reject(winrt::to_string(ex.message()).c_str());
     }
 }
 
@@ -431,9 +438,10 @@ try
 
     promise.Resolve(resultsArray);
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to read directory.");
+    // "Failed to read directory."
+    promise.Reject(winrt::to_string(ex.message()).c_str());
 }
 
 
@@ -469,7 +477,8 @@ catch (const hresult_error& ex)
     }
     else 
     {
-        promise.Reject("Failed to read from file.");
+        // "Failed to read from file."
+        promise.Reject(winrt::to_string(ex.message()).c_str());
     }
 }
 
@@ -519,7 +528,8 @@ catch (const hresult_error& ex)
     }
     else
     {
-        promise.Reject("Failed to get checksum from file.");
+        // "Failed to get checksum from file."
+        promise.Reject(winrt::to_string(ex.message()).c_str());
     }
 }
 
@@ -550,7 +560,8 @@ catch (const hresult_error& ex)
     }
     else
     {
-        promise.Reject("Failed to write to file.");
+        // Failed to write to file."
+        promise.Reject(winrt::to_string(ex.message()).c_str());
     }
 }
 
@@ -582,7 +593,8 @@ catch (const hresult_error& ex)
     }
     else
     {
-        promise.Reject("Failed to append to file.");
+        // "Failed to append to file."
+        promise.Reject(winrt::to_string(ex.message()).c_str());
     }
 }
 winrt::fire_and_forget RNFSManager::write(std::string filepath, std::string base64Content, int position, RN::ReactPromise<void> promise) noexcept
@@ -618,7 +630,8 @@ catch (const hresult_error& ex)
     }
     else
     {
-        promise.Reject("Failed to write to file.");
+        // Failed to write to file."
+        promise.Reject(winrt::to_string(ex.message()).c_str());
     }
 }
 
@@ -663,9 +676,10 @@ try
 
     co_await m_tasks.Add(jobId, ProcessDownloadRequestAsync(promise, request, filePath, jobId, progressInterval, progressDivider));
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to download file.");
+    // "Failed to download file." 
+    promise.Reject(winrt::to_string(ex.message()).c_str());
 }
 
 
@@ -723,9 +737,10 @@ try
 
     co_await m_tasks.Add(jobId, ProcessUploadRequestAsync(promise, options, httpMethod, files, jobId, totalUploadSize));
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to upload file.");
+    // "Failed to upload file."
+    promise.Reject(winrt::to_string(ex.message()).c_str());
 }
 
 
@@ -777,7 +792,8 @@ catch (const hresult_error& ex)
     }
     else
     {
-        promise.Reject("Failed to touch file.");
+        // "Failed to touch file."
+        promise.Reject(winrt::to_string(ex.message()).c_str());
     }
 }
 
