@@ -173,6 +173,7 @@ catch (...)
     promise.Reject("Unexpected error while making directory.");
 }
 
+
 winrt::fire_and_forget RNFSManager::moveFile(std::string filepath, std::string destpath, RN::JSValueObject options, RN::ReactPromise<void> promise) noexcept
 try
 {
@@ -192,7 +193,7 @@ try
 }
 catch (...)
 {
-    promise.Reject("Failed to move file");
+    promise.Reject("Failed to move file.");
 }
 
 
@@ -218,7 +219,7 @@ catch (...)
     promise.Reject("Failed to copy file.");
 }
 
-// TODO: Find a way to test this. May need a demo app because the program crashes when testing for some reason
+
 winrt::fire_and_forget RNFSManager::getFSInfo(RN::ReactPromise<RN::JSValueObject> promise) noexcept
 try
 {
@@ -236,6 +237,7 @@ catch (...)
     promise.Reject("Failed to retrieve file system info.");
 }
 
+
 winrt::fire_and_forget RNFSManager::unlink(std::string filepath, RN::ReactPromise<void> promise) noexcept
 try
 {
@@ -243,15 +245,22 @@ try
     splitPath(filepath, directoryPath, fileName);
 
     StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
-
     auto target{ co_await folder.GetItemAsync(fileName) };
     co_await target.DeleteAsync();
 
     promise.Resolve();
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to unlink.");
+    hresult result{ ex.code() };
+    if (result == 0x80070002) // FileNotFoundException
+    {
+        promise.Reject("ENOENT: no such file or directory");
+    }
+    else
+    {
+        promise.Reject("Failed to unlink file.");
+    }
 }
 
 
@@ -266,17 +275,18 @@ catch (...)
     promise.Reject("Failed to check if file or directory exists.");
 }
 
-// TODO: Downloader
+
 void RNFSManager::stopDownload(int32_t jobID) noexcept
 {
     m_tasks.Cancel(jobID);
 }
 
-// TODO: Downloader
+
 void RNFSManager::stopUpload(int32_t jobID) noexcept
 {
     m_tasks.Cancel(jobID);
 }
+
 
 winrt::fire_and_forget RNFSManager::readFile(std::string filepath, RN::ReactPromise<std::string> promise) noexcept
 try
@@ -289,13 +299,25 @@ try
 
     Streams::IBuffer buffer{ co_await FileIO::ReadBufferAsync(file) };
     winrt::hstring base64Content{ Cryptography::CryptographicBuffer::EncodeToBase64String(buffer) };
-    auto temp{ winrt::to_string(base64Content) };
-    promise.Resolve(temp);
+    promise.Resolve(winrt::to_string(base64Content));
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to read file.");
+    hresult result{ ex.code() };
+    if (result == 0x80070002) // FileNotFoundException
+    {
+        promise.Reject("ENOENT: no such file or directory.");
+    }
+    else if (result == 0x80070005) // UnauthorizedAccessException
+    {
+        promise.Reject("EISDIR: illegal operation on a directory.");
+    }
+    else
+    {
+        promise.Reject("Failed to read file.");
+    }
 }
+
 
 winrt::fire_and_forget RNFSManager::stat(std::string filepath, RN::ReactPromise<RN::JSValueObject> promise) noexcept
 try
@@ -353,8 +375,9 @@ try
 }
 catch (...)
 {
-    promise.Reject("Failed to retrieve file info.");
+    promise.Reject("ENOENT: no such file or directory.");
 }
+
 
 winrt::fire_and_forget RNFSManager::readDir(std::string directory, RN::ReactPromise<RN::JSValueArray> promise) noexcept
 try
@@ -408,9 +431,21 @@ try
 
     promise.Resolve(result);
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to read from file.");
+    hresult result{ ex.code() };
+    if (result == 0x80070002) // FileNotFoundException
+    {
+        promise.Reject("ENOENT: no such file or directory.");
+    }
+    else if (result == 0x80070005) // UnauthorizedAccessException
+    {
+        promise.Reject("EISDIR: illegal operation on a directory.");
+    }
+    else 
+    {
+        promise.Reject("Failed to read from file.");
+    }
 }
 
 
@@ -446,9 +481,21 @@ try
 
     promise.Resolve(result);
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to get checksum from file.");
+    hresult result{ ex.code() };
+    if (result == 0x80070002) // FileNotFoundException
+    {
+        promise.Reject("ENOENT: no such file or directory.");
+    }
+    else if (result == 0x80070005) // UnauthorizedAccessException
+    {
+        promise.Reject("EISDIR: illegal operation on a directory.");
+    }
+    else
+    {
+        promise.Reject("Failed to get checksum from file.");
+    }
 }
 
 
@@ -469,9 +516,17 @@ try
 
     promise.Resolve();
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to write to file.");
+    hresult result{ ex.code() };
+    if (result == 0x80070002) // FileNotFoundException
+    {
+        promise.Reject("ENOENT: no such file or directory.");
+    }
+    else
+    {
+        promise.Reject("Failed to write to file.");
+    }
 }
 
 
@@ -493,11 +548,18 @@ try
 
     promise.Resolve();
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to append to file.");
+    hresult result{ ex.code() };
+    if (result == 0x80070002) // FileNotFoundException
+    {
+        promise.Reject("ENOENT: no such file or directory.");
+    }
+    else
+    {
+        promise.Reject("Failed to append to file.");
+    }
 }
-
 winrt::fire_and_forget RNFSManager::write(std::string filepath, std::string base64Content, int position, RN::ReactPromise<void> promise) noexcept
 try
 {
@@ -522,9 +584,17 @@ try
     co_await stream.WriteAsync(buffer);
     promise.Resolve();
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to write to file.");
+    hresult result{ ex.code() };
+    if (result == 0x80070002) // FileNotFoundException
+    {
+        promise.Reject("ENOENT: no such file or directory.");
+    }
+    else
+    {
+        promise.Reject("Failed to write to file.");
+    }
 }
 
 
@@ -633,7 +703,7 @@ catch (...)
     promise.Reject("Failed to upload file.");
 }
 
-// TODO: Modify FS.Common.js to detect Windows (or at least if the platform isn't Android to modify the creation time)
+
 void RNFSManager::touch(std::string filepath, double mtime, double ctime, RN::ReactPromise<std::string> promise) noexcept
 try
 {
@@ -673,9 +743,17 @@ try
         promise.Resolve(winrt::to_string(s_path));
     }
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-    promise.Reject("Failed to touch file.");
+    hresult result{ ex.code() };
+    if (result == 0x80070002) // FileNotFoundException
+    {
+        promise.Reject("ENOENT: no such file.");
+    }
+    else
+    {
+        promise.Reject("Failed to touch file.");
+    }
 }
 
 
